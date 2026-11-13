@@ -38,7 +38,24 @@ HARMONIA/
         └── ETAPA_01_8_WOKWI_REPORT.md # Integração Wokwi + Pico SDK
 ```
 
+## Compilação e Testes (Host C++23)
+
+```bash
+cmake -B build -DHARMONIA_WARNINGS_AS_ERRORS=ON
+cmake --build build -j
+ctest --test-dir build --output-on-failure
+```
+
+Para habilitar sanitizers (ASan + UBSan) no host (requer `libasan` e `libubsan` instalados):
+
+```bash
+cmake -B build-san -DHARMONIA_ENABLE_SANITIZERS=ON -DHARMONIA_WARNINGS_AS_ERRORS=ON
+cmake --build build-san -j
+ctest --test-dir build-san --output-on-failure
+```
+
 ## Status Atual
 
-- **Etapa atual:** Etapa 01.8 — Fundação da Simulação Wokwi no VS Code (Concluída; compilação/simulação pendente de toolchain ARM + Pico SDK no ambiente).
-- **Próxima etapa:** Etapa 02 — Infraestrutura C++ e Testes (aguardando autorização).
+- **Etapa atual:** Etapa 02 — Infraestrutura C++23, CMake e Testes Automatizados (Concluída no host).
+- **Pendência anterior:** Etapa 01.8 (Wokwi + Pico SDK) aguarda instalação de `arm-none-eabi-gcc` e `pico-sdk` para compilação e simulação.
+- **Próxima etapa:** Etapa 03 — Aquisição Digital no RP2350 (aguardando autorização).
