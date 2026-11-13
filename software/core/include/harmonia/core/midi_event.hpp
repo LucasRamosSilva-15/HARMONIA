@@ -28,7 +28,16 @@ struct NoteEvent {
     std::uint8_t note{0};
     std::uint16_t velocity{0};
 
-    constexpr bool operator==(const NoteEvent&) const noexcept = default;
+    constexpr bool operator==(const NoteEvent& other) const noexcept {
+        return type == other.type &&
+               channel == other.channel &&
+               note == other.note &&
+               velocity == other.velocity;
+    }
+
+    constexpr bool operator!=(const NoteEvent& other) const noexcept {
+        return !(*this == other);
+    }
 };
 
 /// Verifica se o canal MIDI está no intervalo válido [0, 15].

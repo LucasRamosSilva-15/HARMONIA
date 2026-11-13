@@ -9,7 +9,7 @@ target_include_directories(harmonia_core
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_compile_features(harmonia_core PUBLIC cxx_std_23)
+target_compile_features(harmonia_core PUBLIC cxx_std_17)
 
 harmonia_set_warnings(harmonia_core)
 

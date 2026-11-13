@@ -56,5 +56,6 @@ ctest --test-dir build-san --output-on-failure
 
 ## Status Atual
 
-- **Etapa atual:** Etapa 03.0 — Validação do Ambiente Embarcado e Simulação Wokwi (Host e compatibilidade C++17 verificados; compilação `pico2`, Wokwi e sanitizers pendentes de pacotes via `sudo dnf install` e clone do `pico-sdk`).
-- **Próxima etapa:** Etapa 03.1 — Aquisição Digital (Matriz e Debounce) após conclusão dos itens pendentes ou autorização explícita.
+- **Etapa atual:** Etapa 03.1 — Motor de Aquisição Digital: Matriz e Debounce em C++ Portável (Concluída no host: 18/18 testes aprovados, compatível com C++17 e C++23).
+- **Pendências anteriores:** Compilação `pico2`, simulação Wokwi e sanitizers ASan/UBSan aguardam pacotes do ambiente (`ETAPA_03_0_REPORT.md`).
+- **Próxima etapa:** Etapa 03.2 — Integração da Varredura Matricial no RP2350 (aguardando autorização).

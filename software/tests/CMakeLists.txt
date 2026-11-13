@@ -12,6 +12,7 @@ include(Catch)
 
 add_executable(harmonia_core_tests
     test_midi_event.cpp
+    test_key_acquisition.cpp
 )
 
 target_link_libraries(harmonia_core_tests

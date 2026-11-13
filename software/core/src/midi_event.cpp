@@ -15,12 +15,7 @@ std::optional<NoteEvent> make_note_on(
     if (!is_valid_channel(channel) || !is_valid_note(note)) {
         return std::nullopt;
     }
-    return NoteEvent{
-        .type = EventType::NoteOn,
-        .channel = channel,
-        .note = note,
-        .velocity = velocity
-    };
+    return NoteEvent{EventType::NoteOn, channel, note, velocity};
 }
 
 std::optional<NoteEvent> make_note_off(
@@ -31,12 +26,7 @@ std::optional<NoteEvent> make_note_off(
     if (!is_valid_channel(channel) || !is_valid_note(note)) {
         return std::nullopt;
     }
-    return NoteEvent{
-        .type = EventType::NoteOff,
-        .channel = channel,
-        .note = note,
-        .velocity = velocity
-    };
+    return NoteEvent{EventType::NoteOff, channel, note, velocity};
 }
 
 } // namespace harmonia::core
