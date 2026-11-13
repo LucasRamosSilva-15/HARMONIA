@@ -1,0 +1,4 @@
+[wokwi]
+version = 1
+firmware = "../../../firmware/rp2350/build/harmonia_diag.uf2"
+elf = "../../../firmware/rp2350/build/harmonia_diag.elf"

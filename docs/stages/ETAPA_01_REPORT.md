@@ -4,6 +4,7 @@
 
 | Etapa | Nome | Dependências | Entregáveis Principais | Testes Planejados | Prioridade |
 | :--- | :--- | :--- | :--- | :--- | :--- |
+| **01.8** | Simulação Wokwi no VS Code | Etapa 01 | `diagram.json`, `wokwi.toml`, firmware diagnóstico RP2350 | Compilação `pico2` + serial/botão/heartbeat no Wokwi | Alta |
 | **02** | Infraestrutura C++ e Testes | Etapa 01 | `CMakeLists.txt` raiz, framework de testes (Catch2/GTest), CI/build host | Compilação C++ e teste unitário dummy passando | Alta |
 | **03** | Aquisição Digital no RP2350 | Etapa 02 | Varredura matricial, debounce, cálculo de velocity (single-core) | Testes unitários no host + teste em bancada RP2350 | Alta |
 | **04** | Aquisição Analógica e Filtragem | Etapa 03 | Leitura ADC (pedais, pots), média móvel/histerese | Testes unitários de filtro + leitura ADC real | Média |

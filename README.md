@@ -21,6 +21,11 @@ Projeto de um **teclado musical digital autônomo, modular e open source**, dese
 HARMONIA/
 ├── .gitignore
 ├── README.md
+├── firmware/
+│   └── rp2350/              # Firmware de diagnóstico RP2350 (Pico SDK)
+├── hardware/
+│   └── simulation/
+│       └── wokwi/           # Simulação Wokwi (diagram.json + wokwi.toml)
 └── docs/
     ├── architecture/
     │   ├── OVERVIEW.md      # Requisitos e arquitetura do sistema
@@ -29,10 +34,11 @@ HARMONIA/
     │   ├── FEASIBILITY.md   # Análise de viabilidade técnica e física
     │   └── DEPENDENCIES.md  # Pesquisa de dependências e versões
     └── stages/
-        └── ETAPA_01_REPORT.md # Roteiro de etapas e relatório da Etapa 01
+        ├── ETAPA_01_REPORT.md       # Roteiro de etapas e relatório da Etapa 01
+        └── ETAPA_01_8_WOKWI_REPORT.md # Integração Wokwi + Pico SDK
 ```
 
 ## Status Atual
 
-- **Etapa atual:** Etapa 01 — Fundação, Requisitos e Arquitetura Técnica (Concluída).
+- **Etapa atual:** Etapa 01.8 — Fundação da Simulação Wokwi no VS Code (Concluída; compilação/simulação pendente de toolchain ARM + Pico SDK no ambiente).
 - **Próxima etapa:** Etapa 02 — Infraestrutura C++ e Testes (aguardando autorização).
