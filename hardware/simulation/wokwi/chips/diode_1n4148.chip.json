@@ -1,0 +1,8 @@
+{
+  "name": "diode_1n4148",
+  "author": "HARMONIA Project",
+  "pins": [
+    "ANODE",
+    "CATHODE"
+  ]
+}

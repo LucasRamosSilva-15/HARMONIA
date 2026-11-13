@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "author": "HARMONIA Project",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-pi-pico-2",
+      "id": "pico",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "k1",
+      "top": 60,
+      "left": -240,
+      "attrs": { "color": "blue", "label": "K1 (N60)" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "k2",
+      "top": 60,
+      "left": -120,
+      "attrs": { "color": "green", "label": "K2 (N61)" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "k3",
+      "top": 190,
+      "left": -240,
+      "attrs": { "color": "yellow", "label": "K3 (N62)" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "k4",
+      "top": 190,
+      "left": -120,
+      "attrs": { "color": "red", "label": "K4 (N63)" }
+    }
+  ],
+  "connections": [
+    [ "pico:GP0", "$serialMonitor:RX", "", [] ],
+    [ "pico:GP1", "$serialMonitor:TX", "", [] ],
+
+    [ "k1:1.l", "pico:GP14", "blue", [] ],
+    [ "k3:1.l", "pico:GP14", "blue", [] ],
+    [ "k2:1.l", "pico:GP15", "green", [] ],
+    [ "k4:1.l", "pico:GP15", "green", [] ],
+
+    [ "k1:2.r", "pico:GP10", "orange", [] ],
+    [ "k2:2.r", "pico:GP10", "orange", [] ],
+    [ "k3:2.r", "pico:GP11", "purple", [] ],
+    [ "k4:2.r", "pico:GP11", "purple", [] ]
+  ],
+  "dependencies": {}
+}

@@ -37,6 +37,34 @@
       "top": 190,
       "left": -120,
       "attrs": { "color": "red", "label": "K4 (N63)" }
+    },
+    {
+      "type": "chip-diode_1n4148",
+      "id": "d1",
+      "top": 125,
+      "left": -240,
+      "attrs": {}
+    },
+    {
+      "type": "chip-diode_1n4148",
+      "id": "d2",
+      "top": 125,
+      "left": -120,
+      "attrs": {}
+    },
+    {
+      "type": "chip-diode_1n4148",
+      "id": "d3",
+      "top": 255,
+      "left": -240,
+      "attrs": {}
+    },
+    {
+      "type": "chip-diode_1n4148",
+      "id": "d4",
+      "top": 255,
+      "left": -120,
+      "attrs": {}
     }
   ],
   "connections": [
@@ -48,10 +76,15 @@
     [ "k2:1.l", "pico:GP15", "green", [] ],
     [ "k4:1.l", "pico:GP15", "green", [] ],
 
-    [ "k1:2.r", "pico:GP10", "orange", [] ],
-    [ "k2:2.r", "pico:GP10", "orange", [] ],
-    [ "k3:2.r", "pico:GP11", "purple", [] ],
-    [ "k4:2.r", "pico:GP11", "purple", [] ]
+    [ "k1:2.r", "d1:ANODE", "gray", [] ],
+    [ "k2:2.r", "d2:ANODE", "gray", [] ],
+    [ "k3:2.r", "d3:ANODE", "gray", [] ],
+    [ "k4:2.r", "d4:ANODE", "gray", [] ],
+
+    [ "d1:CATHODE", "pico:GP10", "orange", [] ],
+    [ "d2:CATHODE", "pico:GP10", "orange", [] ],
+    [ "d3:CATHODE", "pico:GP11", "purple", [] ],
+    [ "d4:CATHODE", "pico:GP11", "purple", [] ]
   ],
   "dependencies": {}
 }

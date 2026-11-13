@@ -2,3 +2,7 @@
 version = 1
 firmware = "../../../firmware/rp2350/build/harmonia_diag.uf2"
 elf = "../../../firmware/rp2350/build/harmonia_diag.elf"
+
+[[chip]]
+name = "diode_1n4148"
+binary = "chips/diode_1n4148.chip.wasm"
