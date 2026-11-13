@@ -1,31 +1,25 @@
 # Relatório da Etapa 03.2.2 — Automação e Validação da Matriz 2×2 no Wokwi CLI
 
-## 1. Arquivos Criados
-- `hardware/simulation/wokwi/scenario.yaml` (cenário automatizado cobrindo Testes A, B, C, D e E)
-- `scripts/verify_wokwi_log.py` (analisador determinístico de log serial para detectar duplicatas, `NOTE_OFF` órfãos, notas presas e inconsistências de pares ON/OFF)
-- `docs/stages/ETAPA_03_2_2_REPORT.md` (este relatório)
+## 1. Arquivos Criados e Modificados
+- `hardware/simulation/wokwi/scenario.yaml` (atualizado — `wait-serial` com substrings completas `ch=0 note=X vel=40000` / `vel=0` e separação explícita da fase de 3 vértices `k1+k2+k3` antes de `k1+k2+k3+k4`)
+- `scripts/verify_wokwi_log.py` (atualizado — verificação determinística por fase, detecção explícita de `ghost_violations`, eventos extras, canal/velocity incorretos, duplicatas, `NOTE_OFF` órfãos, notas presas e rejeição de logs vazios/incompletos)
+- `scripts/test_verify_wokwi_log.py` (criado — 8 testes unitários para o analisador Python)
+- `docs/stages/ETAPA_03_2_2_REPORT.md` (atualizado)
 
 ## 2. Versão e Verificação do Wokwi CLI
 - **Executável:** `/home/lucasramos/bin/wokwi-cli`
 - **Versão:** `0.29.1 (0aa185144b92)`
-- **Lint do diagrama (`wokwi-cli lint hardware/simulation/wokwi`):** `✓ No issues found` (validando `diagram.json` com `chip-diode`).
-- **Token CI (`WOKWI_CLI_TOKEN`):** `UNSET` no ambiente do processo do agente (o usuário exportou apenas em sua sessão interativa de terminal, sem persistir em `~/.bashrc` / ambiente global). Nenhuma credencial foi gravada em arquivos ou logs.
+- **Lint do diagrama (`wokwi-cli lint hardware/simulation/wokwi`):** `✓ No issues found`.
+- **Token CI (`WOKWI_CLI_TOKEN`):** `UNSET` no ambiente deste processo. Nenhuma credencial foi gravada em arquivos ou logs.
 
-## 3. Estrutura dos Cenários (`scenario.yaml`)
-- **Teste A (Inicialização):** Verifica `[BOOT]`, `[GPIO]`, `[SCAN]` e `[HEARTBEAT]`.
-- **Teste B (Teclas individuais):** Pressiona e solta `k1`..`k4` por `50 ms` (> `20 ms` de debounce), verificando `note=60`..`63` em `[NOTE_ON]` e `[NOTE_OFF]`.
-- **Teste C (Acordes):** Testa `k1+k2`, `k1+k3`, `k2+k4`, `k1+k2+k3` e `k1+k2+k3+k4`.
-- **Teste D (Anti-ghosting):** Pressiona 3 vértices (`k1+k2+k3`) antes de completar `k4`, combinado à verificação de pares no log.
-- **Teste E (Estabilidade):** Pressionamento prolongado (`250 ms`) e soltura limpa.
+## 3. Comandos Executados e Resultados Reais
+1. **`python3 -m unittest scripts/test_verify_wokwi_log.py -v`:** **8/8 testes aprovados** em `0.001s` (cobrindo log válido completo, log vazio, log incompleto, ghosting `note=63` em `D_3VERTICES_ON`, nota presa, `NOTE_ON` duplicado, `NOTE_OFF` órfão e canal incorreto).
+2. **`ctest --test-dir build --output-on-failure`:** **21/21 testes C++ aprovados** em `0.04s`.
+3. **`/home/lucasramos/bin/wokwi-cli lint hardware/simulation/wokwi`:** `✓ No issues found`.
+4. **Execução do `scenario.yaml` no Wokwi CLI:** **Pendente** neste processo porque `WOKWI_CLI_TOKEN` está `UNSET` no ambiente do agente (os cenários **não** foram declarados aprovados).
 
-## 4. Comandos Executados e Resultados Reais
-1. `wokwi-cli lint hardware/simulation/wokwi` -> **`✓ No issues found`**.
-2. `cmake --build build -j && ctest --test-dir build --output-on-failure` -> **`21/21` testes aprovados** em `0.05 sec`.
-3. `cmake --build firmware/rp2350/build` -> **`ninja: no work to do`** (ELF/UF2 já atualizados para `pico2` / `rp2350-arm-s`).
-4. **Execução do `scenario.yaml`:** **Pendente** no shell do agente porque `WOKWI_CLI_TOKEN` está `UNSET` neste processo.
-
-## 5. Como Executar a Validação Completa no Terminal com Token
-No terminal onde `WOKWI_CLI_TOKEN` está exportado (ou adicionando-o ao seu ambiente):
+## 4. Comando de Execução no Terminal com Token
+No terminal onde `WOKWI_CLI_TOKEN` estiver exportado:
 
 ```bash
 /home/lucasramos/bin/wokwi-cli hardware/simulation/wokwi \
@@ -36,6 +30,6 @@ No terminal onde `WOKWI_CLI_TOKEN` está exportado (ou adicionando-o ao seu ambi
 python3 scripts/verify_wokwi_log.py /tmp/harmonia_wokwi.log
 ```
 
-## 6. Limitações e Critérios Pendentes
-- **Execução do cenário 2×2:** Aguarda execução com `WOKWI_CLI_TOKEN` ativo para comprovar na prática o comportamento elétrico de `github:drf5n/Wokwi-Chip-Diode@1.0.0`, as 4 teclas individuais, acordes, ausência de ghosting e zero notas presas.
-- **Hardware físico:** A validação no Wokwi (simulador) não substitui testes em bancada física com RP2350 real, diodos 1N4148 reais e osciloscópio/analisador lógico.
+## 5. Limitações e Critérios Pendentes
+- A execução real do `scenario.yaml` (comprovação de `chip-diode`, 4 teclas, acordes e anti-ghosting no simulador) permanece pendente de execução com `WOKWI_CLI_TOKEN` ativo.
+- A validação em simulador (Wokwi) continua distinta da validação em hardware físico (RP2350 + diodos 1N4148 reais).
