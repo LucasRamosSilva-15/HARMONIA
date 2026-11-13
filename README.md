@@ -56,6 +56,5 @@ ctest --test-dir build-san --output-on-failure
 
 ## Status Atual
 
-- **Etapa atual:** Etapa 02 — Infraestrutura C++23, CMake e Testes Automatizados (Concluída no host).
-- **Pendência anterior:** Etapa 01.8 (Wokwi + Pico SDK) aguarda instalação de `arm-none-eabi-gcc` e `pico-sdk` para compilação e simulação.
-- **Próxima etapa:** Etapa 03 — Aquisição Digital no RP2350 (aguardando autorização).
+- **Etapa atual:** Etapa 03.0 — Validação do Ambiente Embarcado e Simulação Wokwi (Host e compatibilidade C++17 verificados; compilação `pico2`, Wokwi e sanitizers pendentes de pacotes via `sudo dnf install` e clone do `pico-sdk`).
+- **Próxima etapa:** Etapa 03.1 — Aquisição Digital (Matriz e Debounce) após conclusão dos itens pendentes ou autorização explícita.
