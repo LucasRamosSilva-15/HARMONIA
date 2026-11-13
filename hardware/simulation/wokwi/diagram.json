@@ -14,7 +14,7 @@
       "type": "wokwi-pushbutton",
       "id": "k1",
       "top": 60,
-      "left": -220,
+      "left": -240,
       "attrs": { "color": "blue", "label": "K1 (N60)" }
     },
     {
@@ -27,44 +27,44 @@
     {
       "type": "wokwi-pushbutton",
       "id": "k3",
-      "top": 180,
-      "left": -220,
+      "top": 190,
+      "left": -240,
       "attrs": { "color": "yellow", "label": "K3 (N62)" }
     },
     {
       "type": "wokwi-pushbutton",
       "id": "k4",
-      "top": 180,
+      "top": 190,
       "left": -120,
       "attrs": { "color": "red", "label": "K4 (N63)" }
     },
     {
-      "type": "wokwi-diode",
+      "type": "chip-diode",
       "id": "d1",
-      "top": 115,
-      "left": -220,
-      "attrs": { "color": "black" }
+      "top": 125,
+      "left": -240,
+      "attrs": {}
     },
     {
-      "type": "wokwi-diode",
+      "type": "chip-diode",
       "id": "d2",
-      "top": 115,
+      "top": 125,
       "left": -120,
-      "attrs": { "color": "black" }
+      "attrs": {}
     },
     {
-      "type": "wokwi-diode",
+      "type": "chip-diode",
       "id": "d3",
-      "top": 235,
-      "left": -220,
-      "attrs": { "color": "black" }
+      "top": 255,
+      "left": -240,
+      "attrs": {}
     },
     {
-      "type": "wokwi-diode",
+      "type": "chip-diode",
       "id": "d4",
-      "top": 235,
+      "top": 255,
       "left": -120,
-      "attrs": { "color": "black" }
+      "attrs": {}
     }
   ],
   "connections": [
@@ -76,15 +76,17 @@
     [ "k2:1.l", "pico:GP15", "green", [] ],
     [ "k4:1.l", "pico:GP15", "green", [] ],
 
-    [ "k1:2.r", "d1:A", "gray", [] ],
-    [ "k2:2.r", "d2:A", "gray", [] ],
-    [ "k3:2.r", "d3:A", "gray", [] ],
-    [ "k4:2.r", "d4:A", "gray", [] ],
+    [ "k1:2.r", "d1:ANODE", "gray", [] ],
+    [ "k2:2.r", "d2:ANODE", "gray", [] ],
+    [ "k3:2.r", "d3:ANODE", "gray", [] ],
+    [ "k4:2.r", "d4:ANODE", "gray", [] ],
 
-    [ "d1:C", "pico:GP10", "orange", [] ],
-    [ "d2:C", "pico:GP10", "orange", [] ],
-    [ "d3:C", "pico:GP11", "purple", [] ],
-    [ "d4:C", "pico:GP11", "purple", [] ]
+    [ "d1:CATHODE", "pico:GP10", "orange", [] ],
+    [ "d2:CATHODE", "pico:GP10", "orange", [] ],
+    [ "d3:CATHODE", "pico:GP11", "purple", [] ],
+    [ "d4:CATHODE", "pico:GP11", "purple", [] ]
   ],
-  "dependencies": {}
+  "dependencies": {
+    "chip-diode": "github:drf5n/Wokwi-Chip-Diode@1.0.0"
+  }
 }

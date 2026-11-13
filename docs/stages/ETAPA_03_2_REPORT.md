@@ -19,9 +19,10 @@
   - `UART0`: `GP0` (TX) -> `$serialMonitor:RX`, `GP1` (RX) -> `$serialMonitor:TX`
   - `ROW0`: `GP10`, `ROW1`: `GP11`
   - `COL0`: `GP14` (pull-up), `COL1`: `GP15` (pull-up)
-- **Sentido da corrente e diodos (`wokwi-diode`):**
+- **Sentido da corrente e diodos (`chip-diode`):**
+  - O Wokwi não possui um diodo de sinal nativo (`wokwi-diode` gera `unknown-part-type`), portanto foi adotado o chip comunitário `"chip-diode": "github:drf5n/Wokwi-Chip-Diode@1.0.0"` com pinos `ANODE` e `CATHODE`.
   - Colunas em pull-up (3.3 V) e linha selecionada em nível LOW (0 V).
-  - Corrente flui de `COL_c -> Botão k_i -> Ânodo (A) -> Cátodo (C) do diodo d_i -> ROW_r`.
+  - Corrente flui de `COL_c -> Botão k_i -> ANODE -> CATHODE do diodo d_i -> ROW_r`.
   - Mapeamento: `k1` (N60) em `(ROW0, COL0)`, `k2` (N61) em `(ROW0, COL1)`, `k3` (N62) em `(ROW1, COL0)`, `k4` (N63) em `(ROW1, COL1)`.
 
 ## 4. Driver GPIO RP2350
@@ -38,9 +39,10 @@
 2. **Compilação RP2350 (`PICO_SDK_PATH=/home/lucasramos/pico-sdk`, `pico2`, Ninja):**
    - **Resultado:** Compilado com sucesso (`/usr/bin/arm-none-eabi-gcc`, `rp2350-arm-s`), linkando `libharmonia_core.a` (C++17).
    - **Artefatos gerados:** `firmware/rp2350/build/harmonia_diag.elf` (414 KB) e `firmware/rp2350/build/harmonia_diag.uf2` (37 KB).
-3. **Execução no Wokwi (GP14 inicial e Matriz 2×2):**
-   - **Status:** **Pendente de execução manual no VS Code** (`wokwi-cli` não está instalado no ambiente de terminal; a simulação interativa é executada pela extensão Wokwi no VS Code).
-   - O firmware pré-matriz (`harmonia_diag` GP14) foi compilado com sucesso antes da expansão para 2×2, mas sua execução interativa no Wokwi não pôde ser automatizada neste terminal.
+3. **Execução no Wokwi (`wokwi-cli v0.29.1`):**
+   - **Boot + Heartbeat:** **Aprovado** (`[BOOT]`, `[GPIO]`, `[SCAN]` e `[HEARTBEAT] [2000334 us] #1` observados na UART0).
+   - **Problema encontrado e corrigido:** `wokwi-diode` foi rejeitado pelo Wokwi (`unknown-part-type`); `diagram.json` foi corrigido para usar `chip-diode` (`github:drf5n/Wokwi-Chip-Diode@1.0.0`).
+   - **Testes de pressionamento/acordes no Wokwi:** **Pendente** de reexecução com `diagram.json` atualizado (`chip-diode`) e automação de cliques/cenário.
 
 ## 6. Procedimento de Validação Manual no Wokwi (VS Code)
 1. Abrir `hardware/simulation/wokwi/` no VS Code com a extensão Wokwi Simulator.
