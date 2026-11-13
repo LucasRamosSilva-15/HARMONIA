@@ -1,0 +1,40 @@
+# Build directories
+build/
+build-*/
+cmake-build-*/
+out/
+
+# Pico SDK / Embedded artifacts
+*.uf2
+*.elf
+*.bin
+*.hex
+*.map
+*.dis
+
+# CMake / IDE
+CMakeCache.txt
+CMakeFiles/
+CMakeUserPresets.json
+.cmake/
+compile_commands.json
+.vscode/
+.idea/
+*.swp
+*~
+
+# Compiled objects & libraries
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+
+# Qt / QML
+*.qmlc
+*.jsc
+.qt/
+
+# OS
+.DS_Store
+Thumbs.db
