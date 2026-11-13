@@ -1,0 +1,36 @@
+name: 'HARMONIA RP2350 UMP Validation'
+version: 1
+author: 'HARMONIA Project'
+steps:
+  - wait-serial: '[BOOT] HARMONIA RP2350'
+  # Valores iniciais minimos dos potenciometros em UMP MIDI 2.0
+  - wait-serial: '[UMP] mt=4 group=0 words=2 data=40B00700 00000000'
+  - wait-serial: '[UMP] mt=4 group=0 words=2 data=40B00B00 00000000'
+
+  # Tecla individual K1 (nota 60, vel 40000 = 0x9C40)
+  - set-control: { part-id: k1, name: pressed, value: 1 }
+  - wait-serial: '[UMP] mt=4 group=0 words=2 data=40903C00 9C400000'
+  - set-control: { part-id: k1, name: pressed, value: 0 }
+  - wait-serial: '[UMP] mt=4 group=0 words=2 data=40803C00 00000000'
+
+  # Acorde multiplo (K1 + K2 + K3 -> notas 60, 61, 62 sem ghosting 63)
+  - set-control: { part-id: k1, name: pressed, value: 1 }
+  - delay: 2ms
+  - set-control: { part-id: k2, name: pressed, value: 1 }
+  - delay: 2ms
+  - set-control: { part-id: k3, name: pressed, value: 1 }
+  - delay: 45ms
+  - set-control: { part-id: k1, name: pressed, value: 0 }
+  - delay: 2ms
+  - set-control: { part-id: k2, name: pressed, value: 0 }
+  - delay: 2ms
+  - set-control: { part-id: k3, name: pressed, value: 0 }
+  - delay: 45ms
+
+  # Pot1 (CC 7) ate maximo (0xFFFFFFFF)
+  - set-control: { part-id: pot1, name: position, value: 1.0 }
+  - wait-serial: '[UMP] mt=4 group=0 words=2 data=40B00700 FFFFFFFF'
+
+  # Pot2 (CC 11) ate maximo (0xFFFFFFFF)
+  - set-control: { part-id: pot2, name: position, value: 1.0 }
+  - wait-serial: '[UMP] mt=4 group=0 words=2 data=40B00B00 FFFFFFFF'

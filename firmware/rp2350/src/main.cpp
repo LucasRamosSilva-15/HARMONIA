@@ -8,6 +8,7 @@
 #include "harmonia/core/key_matrix.hpp"
 #include "harmonia/core/key_scanner.hpp"
 #include "harmonia/core/midi_event.hpp"
+#include "harmonia/core/ump.hpp"
 #include "hardware/gpio.h"
 #include "pico/stdlib.h"
 #include "pico/time.h"
@@ -84,6 +85,8 @@ int main() {
     printf("================================================\n");
 
     std::array<harmonia::core::NoteEvent, 8> events{};
+    harmonia::core::UmpRouter ump_router(0, harmonia::core::UmpProtocolMode::Midi2);
+    harmonia::core::UmpPacketQueue<32> ump_queue;
     std::uint32_t next_scan_us = time_us_32();
     std::uint32_t next_adc_us = next_scan_us + 500; // defasado 500 us da borda do scan digital
     std::uint32_t last_heartbeat_us = next_scan_us;
@@ -143,6 +146,7 @@ int main() {
                            static_cast<unsigned>(ev.note),
                            static_cast<unsigned>(ev.velocity));
                 }
+                (void)ump_router.route_note(ev, ump_queue);
             }
         }
 
@@ -170,9 +174,30 @@ int main() {
                        static_cast<unsigned>(ctrl->raw_filtered),
                        static_cast<unsigned>(harmonia::core::to_midi1_7bit(ctrl->value_32)),
                        static_cast<unsigned long>(ctrl->value_32));
+                (void)ump_router.route_control(*ctrl, ump_queue);
             }
 
             active_adc_ch = static_cast<std::uint8_t>((active_adc_ch + 1u) % 2u);
+        }
+
+        // Drena ate 4 pacotes UMP por iteracao para diagnostico UART0 fora da janela critica de aquisicao
+        for (int drained = 0; drained < 4 && !ump_queue.empty(); ++drained) {
+            const auto pkt = ump_queue.pop();
+            if (!pkt.has_value()) {
+                break;
+            }
+            if (pkt->word_count == 2u) {
+                printf("[UMP] mt=%u group=%u words=2 data=%08lX %08lX\n",
+                       static_cast<unsigned>(pkt->message_type()),
+                       static_cast<unsigned>(pkt->group()),
+                       static_cast<unsigned long>(pkt->words[0]),
+                       static_cast<unsigned long>(pkt->words[1]));
+            } else if (pkt->word_count == 1u) {
+                printf("[UMP] mt=%u group=%u words=1 data=%08lX\n",
+                       static_cast<unsigned>(pkt->message_type()),
+                       static_cast<unsigned>(pkt->group()),
+                       static_cast<unsigned long>(pkt->words[0]));
+            }
         }
 
         if (static_cast<std::uint32_t>(now_us - last_heartbeat_us) >= kHeartbeatIntervalUs) {
@@ -185,13 +210,14 @@ int main() {
             printf("[HEARTBEAT] [%lu us] #%lu\n",
                    static_cast<unsigned long>(now_us),
                    static_cast<unsigned long>(heartbeat_count));
-            printf("[METRICS] [%lu us] max_scan_dt=%lu max_scan_late=%lu max_adc_proc=%lu max_adc_late=%lu adc_events=%lu\n",
+            printf("[METRICS] [%lu us] max_scan_dt=%lu max_scan_late=%lu max_adc_proc=%lu max_adc_late=%lu adc_events=%lu ump_drops=%lu\n",
                    static_cast<unsigned long>(now_us),
                    static_cast<unsigned long>(max_scan_dt_us),
                    static_cast<unsigned long>(max_scan_late_us),
                    static_cast<unsigned long>(max_adc_proc_us),
                    static_cast<unsigned long>(max_adc_late_us),
-                   static_cast<unsigned long>(adc_events_emitted));
+                   static_cast<unsigned long>(adc_events_emitted),
+                   static_cast<unsigned long>(ump_queue.dropped_count()));
         }
     }
 

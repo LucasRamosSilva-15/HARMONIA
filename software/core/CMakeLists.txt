@@ -1,6 +1,7 @@
 add_library(harmonia_core STATIC
     src/midi_event.cpp
     src/analog_control.cpp
+    src/ump.cpp
 )
 
 add_library(harmonia::core ALIAS harmonia_core)
