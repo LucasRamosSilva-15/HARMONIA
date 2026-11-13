@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Iterable, List, Optional, Set, Tuple
 
 EVENT_RE = re.compile(
-    r"^\[(NOTE_ON|NOTE_OFF)\]\s+\[(\d+)\s+us\]\s+ch=(\d+)\s+note=(\d+)\s+vel=(\d+)$"
+    r"\[(NOTE_ON|NOTE_OFF)\]\s+\[(\d+)\s+us\]\s+ch=(\d+)\s+note=(\d+)\s+vel=(\d+)"
 )
 
 MidiTuple = Tuple[str, int, int, int]  # (type, ch, note, vel)
@@ -94,22 +94,20 @@ def analyze_lines(lines: Iterable[str]) -> AnalysisResult:
 
     parsed_events: List[Tuple[MidiTuple, str]] = []
     for ln in raw_lines:
-        m = EVENT_RE.match(ln)
-        if not m:
-            continue
-        ev_type, _ts, ch_s, note_s, vel_s = m.groups()
-        ev = (ev_type, int(ch_s), int(note_s), int(vel_s))
-        parsed_events.append((ev, ln))
+        for m in EVENT_RE.finditer(ln):
+            ev_type, _ts, ch_s, note_s, vel_s = m.groups()
+            ev = (ev_type, int(ch_s), int(note_s), int(vel_s))
+            parsed_events.append((ev, m.group(0)))
 
-        note = ev[2]
-        if ev_type == "NOTE_ON":
-            if note in active_notes:
-                duplicates.append(ln)
-            active_notes.add(note)
-        else:
-            if note not in active_notes:
-                orphan_offs.append(ln)
-            active_notes.discard(note)
+            note = ev[2]
+            if ev_type == "NOTE_ON":
+                if note in active_notes:
+                    duplicates.append(m.group(0))
+                active_notes.add(note)
+            else:
+                if note not in active_notes:
+                    orphan_offs.append(m.group(0))
+                active_notes.discard(note)
 
     # Verificacao deterministica por fase
     phase_idx = 0
