@@ -12,12 +12,32 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 pico_sdk_init()
 
+# Reutiliza harmonia_core (C++17) diretamente no firmware RP2350
+function(harmonia_set_warnings target_name)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${target_name} PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+        )
+    endif()
+endfunction()
+
+add_subdirectory(../../software/core harmonia_core_build)
+
 add_executable(harmonia_diag
     src/main.cpp
+    src/gpio_matrix_driver.cpp
+)
+
+target_include_directories(harmonia_diag
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_link_libraries(harmonia_diag
     pico_stdlib
+    harmonia::core
 )
 
 # Habilita saída serial via UART0 (GP0/GP1) para o monitor serial do Wokwi

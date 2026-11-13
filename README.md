@@ -56,6 +56,5 @@ ctest --test-dir build-san --output-on-failure
 
 ## Status Atual
 
-- **Etapa atual:** Etapa 03.1 — Motor de Aquisição Digital: Matriz e Debounce em C++ Portável (Concluída no host: 18/18 testes aprovados, compatível com C++17 e C++23).
-- **Pendências anteriores:** Compilação `pico2`, simulação Wokwi e sanitizers ASan/UBSan aguardam pacotes do ambiente (`ETAPA_03_0_REPORT.md`).
-- **Próxima etapa:** Etapa 03.2 — Integração da Varredura Matricial no RP2350 (aguardando autorização).
+- **Etapa atual:** Etapa 03.2 — Integração da Aquisição Digital ao RP2350 e Wokwi (21/21 testes no host aprovados; firmware `pico2` com matriz 2×2 compilado em `.elf`/`.uf2`; validação interativa no Wokwi pendente no VS Code).
+- **Próxima etapa:** Etapa 04 — Aquisição Analógica e Filtragem (aguardando validação Wokwi e autorização).

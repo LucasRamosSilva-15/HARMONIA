@@ -12,20 +12,79 @@
     },
     {
       "type": "wokwi-pushbutton",
-      "id": "btn1",
-      "top": 120,
-      "left": -140,
-      "attrs": {
-        "color": "blue",
-        "label": "KEY_TEST"
-      }
+      "id": "k1",
+      "top": 60,
+      "left": -220,
+      "attrs": { "color": "blue", "label": "K1 (N60)" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "k2",
+      "top": 60,
+      "left": -120,
+      "attrs": { "color": "green", "label": "K2 (N61)" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "k3",
+      "top": 180,
+      "left": -220,
+      "attrs": { "color": "yellow", "label": "K3 (N62)" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "k4",
+      "top": 180,
+      "left": -120,
+      "attrs": { "color": "red", "label": "K4 (N63)" }
+    },
+    {
+      "type": "wokwi-diode",
+      "id": "d1",
+      "top": 115,
+      "left": -220,
+      "attrs": { "color": "black" }
+    },
+    {
+      "type": "wokwi-diode",
+      "id": "d2",
+      "top": 115,
+      "left": -120,
+      "attrs": { "color": "black" }
+    },
+    {
+      "type": "wokwi-diode",
+      "id": "d3",
+      "top": 235,
+      "left": -220,
+      "attrs": { "color": "black" }
+    },
+    {
+      "type": "wokwi-diode",
+      "id": "d4",
+      "top": 235,
+      "left": -120,
+      "attrs": { "color": "black" }
     }
   ],
   "connections": [
     [ "pico:GP0", "$serialMonitor:RX", "", [] ],
     [ "pico:GP1", "$serialMonitor:TX", "", [] ],
-    [ "btn1:1.r", "pico:GP14", "blue", [ "h20", "v-10" ] ],
-    [ "btn1:2.r", "pico:GND.4", "black", [ "h20", "v20" ] ]
+
+    [ "k1:1.l", "pico:GP14", "blue", [] ],
+    [ "k3:1.l", "pico:GP14", "blue", [] ],
+    [ "k2:1.l", "pico:GP15", "green", [] ],
+    [ "k4:1.l", "pico:GP15", "green", [] ],
+
+    [ "k1:2.r", "d1:A", "gray", [] ],
+    [ "k2:2.r", "d2:A", "gray", [] ],
+    [ "k3:2.r", "d3:A", "gray", [] ],
+    [ "k4:2.r", "d4:A", "gray", [] ],
+
+    [ "d1:C", "pico:GP10", "orange", [] ],
+    [ "d2:C", "pico:GP10", "orange", [] ],
+    [ "d3:C", "pico:GP11", "purple", [] ],
+    [ "d4:C", "pico:GP11", "purple", [] ]
   ],
   "dependencies": {}
 }

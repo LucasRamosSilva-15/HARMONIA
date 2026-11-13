@@ -245,3 +245,109 @@ TEST_CASE("Debouncer is independent of regular sampling intervals and handles ui
     REQUIRE(scanner.scan(matrix, t_start + 25000u, out.data(), out.size()) == 1);
     REQUIRE(out[0] == NoteEvent{EventType::NoteOn, 0, 60, 32768});
 }
+
+TEST_CASE("Small caller buffer does not lose events and drains on next call", "[core][acquisition][integrity]") {
+    auto scanner = make_2x2_scanner(60, 40000);
+    KeyMatrixState<2, 2> matrix(2, 2);
+
+    // Pressiona todas as 4 teclas simultaneamente
+    matrix.set_key(0, 0, true);
+    matrix.set_key(0, 1, true);
+    matrix.set_key(1, 0, true);
+    matrix.set_key(1, 1, true);
+
+    std::array<NoteEvent, 2> small_buf{};
+    REQUIRE(scanner.scan_with_status(matrix, 0, small_buf.data(), small_buf.size()).emitted == 0);
+
+    // Primeiro scan com buffer de apenas 2 posições: recebe 2 e mantém 2 pendentes sem overflow
+    const auto r1 = scanner.scan_with_status(matrix, 20000, small_buf.data(), small_buf.size());
+    REQUIRE(r1.emitted == 2);
+    REQUIRE_FALSE(r1.overflow);
+    REQUIRE(r1.pending_count == 2);
+    REQUIRE(small_buf[0] == NoteEvent{EventType::NoteOn, 0, 60, 40000});
+    REQUIRE(small_buf[1] == NoteEvent{EventType::NoteOn, 0, 61, 40000});
+
+    // Drena os 2 restantes sem perder nenhum
+    const auto r2 = scanner.scan_with_status(matrix, 25000, small_buf.data(), small_buf.size());
+    REQUIRE(r2.emitted == 2);
+    REQUIRE_FALSE(r2.overflow);
+    REQUIRE(r2.pending_count == 0);
+    REQUIRE(small_buf[0] == NoteEvent{EventType::NoteOn, 0, 62, 40000});
+    REQUIRE(small_buf[1] == NoteEvent{EventType::NoteOn, 0, 63, 40000});
+}
+
+TEST_CASE("Extreme internal queue saturation signals overflow and preserves NoteOff", "[core][acquisition][integrity]") {
+    auto scanner = make_2x2_scanner(60, 40000);
+    KeyMatrixState<2, 2> matrix(2, 2);
+
+    // Satura a fila interna (capacidade = 8 para matriz 2x2) passando max_events = 0
+    // Ciclo 1: 4 NoteOn (fila = 4)
+    matrix.set_key(0, 0, true);
+    matrix.set_key(0, 1, true);
+    matrix.set_key(1, 0, true);
+    matrix.set_key(1, 1, true);
+    REQUIRE(scanner.scan_with_status(matrix, 0, nullptr, 0).emitted == 0);
+    const auto s1 = scanner.scan_with_status(matrix, 20000, nullptr, 0);
+    REQUIRE_FALSE(s1.overflow);
+    REQUIRE(s1.pending_count == 4);
+
+    // Ciclo 2: solta 4 teclas -> 4 NoteOff (fila = 8, cheia)
+    matrix.clear();
+    REQUIRE(scanner.scan_with_status(matrix, 30000, nullptr, 0).emitted == 0);
+    const auto s2 = scanner.scan_with_status(matrix, 50000, nullptr, 0);
+    REQUIRE_FALSE(s2.overflow);
+    REQUIRE(s2.pending_count == 8);
+
+    // Ciclo 3: pressiona 4 teclas novamente com fila cheia -> deve sinalizar overflow e descartar NoteOn
+    matrix.set_key(0, 0, true);
+    matrix.set_key(0, 1, true);
+    matrix.set_key(1, 0, true);
+    matrix.set_key(1, 1, true);
+    REQUIRE(scanner.scan_with_status(matrix, 60000, nullptr, 0).emitted == 0);
+    const auto s3 = scanner.scan_with_status(matrix, 80000, nullptr, 0);
+    REQUIRE(s3.overflow);
+    REQUIRE(s3.dropped_note_on == 4);
+    REQUIRE(s3.pending_count == 8);
+
+    // Drena tudo e verifica que os 4 NoteOff preservados foram entregues e o sistema se recuperou
+    std::array<NoteEvent, 8> out{};
+    const auto drained = scanner.drain(out.data(), out.size());
+    REQUIRE(drained == 8);
+    REQUIRE(scanner.pending_count() == 0);
+
+    std::size_t note_off_count = 0;
+    for (std::size_t i = 0; i < drained; ++i) {
+        if (out[i].type == EventType::NoteOff) {
+            ++note_off_count;
+        }
+    }
+    REQUIRE(note_off_count == 4);
+
+    // Recuperação: soltar as teclas cujo NoteOn foi descartado não gera NoteOff órfão
+    matrix.clear();
+    REQUIRE(scanner.scan_with_status(matrix, 90000, out.data(), out.size()).emitted == 0);
+    const auto s4 = scanner.scan_with_status(matrix, 110000, out.data(), out.size());
+    REQUIRE(s4.emitted == 0);
+}
+
+TEST_CASE("Remapping MIDI note while key is held still releases the original note", "[core][acquisition][integrity]") {
+    auto scanner = make_2x2_scanner(60, 45000);
+    KeyMatrixState<2, 2> matrix(2, 2);
+    std::array<NoteEvent, 4> out{};
+
+    // Pressiona tecla 0 (nota 60, canal 0)
+    matrix.set_key(0, 0, true);
+    REQUIRE(scanner.scan(matrix, 0, out.data(), out.size()) == 0);
+    REQUIRE(scanner.scan(matrix, 20000, out.data(), out.size()) == 1);
+    REQUIRE(out[0] == NoteEvent{EventType::NoteOn, 0, 60, 45000});
+
+    // Muda o mapeamento e canal enquanto a tecla continua pressionada
+    REQUIRE(scanner.mapper().set_note(0, 72));
+    REQUIRE(scanner.mapper().set_channel(2));
+
+    // Solta tecla 0: deve emitir NoteOff para nota 60, canal 0 (e não 72, canal 2!)
+    matrix.set_key(0, 0, false);
+    REQUIRE(scanner.scan(matrix, 40000, out.data(), out.size()) == 0);
+    REQUIRE(scanner.scan(matrix, 60000, out.data(), out.size()) == 1);
+    REQUIRE(out[0] == NoteEvent{EventType::NoteOff, 0, 60, 0});
+}
