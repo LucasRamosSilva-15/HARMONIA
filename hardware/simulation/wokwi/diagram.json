@@ -65,6 +65,20 @@
       "top": 255,
       "left": -120,
       "attrs": {}
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot1",
+      "top": 40,
+      "left": 240,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot2",
+      "top": 180,
+      "left": 240,
+      "attrs": {}
     }
   ],
   "connections": [
@@ -84,7 +98,15 @@
     [ "d1:CATHODE", "pico:GP10", "orange", [] ],
     [ "d2:CATHODE", "pico:GP10", "orange", [] ],
     [ "d3:CATHODE", "pico:GP11", "purple", [] ],
-    [ "d4:CATHODE", "pico:GP11", "purple", [] ]
+    [ "d4:CATHODE", "pico:GP11", "purple", [] ],
+
+    [ "pot1:GND", "pico:GND.5", "black", [] ],
+    [ "pot1:VCC", "pico:3V3", "red", [] ],
+    [ "pot1:SIG", "pico:GP26", "cyan", [] ],
+
+    [ "pot2:GND", "pico:GND.6", "black", [] ],
+    [ "pot2:VCC", "pico:3V3", "red", [] ],
+    [ "pot2:SIG", "pico:GP27", "magenta", [] ]
   ],
   "dependencies": {}
 }

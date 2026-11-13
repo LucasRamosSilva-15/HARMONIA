@@ -5,7 +5,7 @@ steps:
   # ==========================================
   # Teste A - Inicializacao e Heartbeat
   # ==========================================
-  - wait-serial: '[BOOT] HARMONIA RP2350 - Etapa 03.2 (Matriz 2x2)'
+  - wait-serial: '[BOOT] HARMONIA RP2350'
   - wait-serial: '[GPIO] Rows: GP10, GP11 (Hi-Z / active-low) | Cols: GP14, GP15 (pull-up)'
   - wait-serial: '[SCAN] Interval: 1000 us | Debounce: 20000 us | Notes: 60..63 | Vel: 40000'
   - wait-serial: '[HEARTBEAT]'

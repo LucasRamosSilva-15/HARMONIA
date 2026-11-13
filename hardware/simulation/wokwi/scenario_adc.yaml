@@ -1,0 +1,20 @@
+name: 'HARMONIA RP2350 ADC Potentiometers Validation'
+version: 1
+author: 'HARMONIA Project'
+steps:
+  - wait-serial: '[BOOT] HARMONIA RP2350'
+  - wait-serial: '[ADC]  GP26 (ADC0->CC7 Vol) | GP27 (ADC1->CC11 Expr)'
+  - wait-serial: 'cc=7 raw=0 midi7=0'
+  - wait-serial: 'cc=11 raw=0 midi7=0'
+
+  # Pot1 (CC 7): minimo (0) -> intermediario (0.5) -> maximo (1.0)
+  - set-control: { part-id: pot1, name: position, value: 0.5 }
+  - wait-serial: 'cc=7'
+  - set-control: { part-id: pot1, name: position, value: 1.0 }
+  - wait-serial: 'cc=7 raw=4095 midi7=127'
+
+  # Pot2 (CC 11): minimo (0) -> intermediario (0.5) -> maximo (1.0)
+  - set-control: { part-id: pot2, name: position, value: 0.5 }
+  - wait-serial: 'cc=11'
+  - set-control: { part-id: pot2, name: position, value: 1.0 }
+  - wait-serial: 'cc=11 raw=4095 midi7=127'

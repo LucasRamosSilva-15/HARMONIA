@@ -56,5 +56,5 @@ ctest --test-dir build-san --output-on-failure
 
 ## Status Atual
 
-- **Etapa atual:** Etapa 03.2 — Integração da Aquisição Digital ao RP2350 e Wokwi (21/21 testes no host aprovados; firmware `pico2` com matriz 2×2 compilado em `.elf`/`.uf2`; validação interativa no Wokwi pendente no VS Code).
-- **Próxima etapa:** Etapa 04 — Aquisição Analógica e Filtragem (aguardando validação Wokwi e autorização).
+- **Etapa atual:** Etapa 04 — Aquisição Analógica e Filtragem no RP2350 (Concluída: 30/30 testes C++ no host, firmware `pico2` compilado com `hardware_adc` e cenário `scenario_adc.yaml` aprovado no Wokwi).
+- **Próxima etapa:** Etapa 05 — Eventos Musicais e Codificação UMP (aguardando autorização).
