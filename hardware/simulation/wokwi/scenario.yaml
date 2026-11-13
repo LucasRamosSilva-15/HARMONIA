@@ -1,0 +1,152 @@
+name: 'HARMONIA RP2350 2x2 Matrix Validation'
+version: 1
+author: 'HARMONIA Project'
+steps:
+  # ==========================================
+  # Teste A - Inicializacao e Heartbeat
+  # ==========================================
+  - wait-serial: '[BOOT] HARMONIA RP2350 - Etapa 03.2 (Matriz 2x2)'
+  - wait-serial: '[GPIO] Rows: GP10, GP11'
+  - wait-serial: '[SCAN] Interval: 1000 us | Debounce: 20000 us | Notes: 60..63'
+  - wait-serial: '[HEARTBEAT]'
+
+  # ==========================================
+  # Teste B - Teclas individuais (K1..K4)
+  # ==========================================
+  # K1 -> Nota 60
+  - set-control:
+      part-id: k1
+      name: pressed
+      value: 1
+  - delay: 50ms
+  - wait-serial: '[NOTE_ON]'
+  - wait-serial: 'note=60'
+  - set-control:
+      part-id: k1
+      name: pressed
+      value: 0
+  - delay: 50ms
+  - wait-serial: '[NOTE_OFF]'
+  - wait-serial: 'note=60'
+
+  # K2 -> Nota 61
+  - set-control:
+      part-id: k2
+      name: pressed
+      value: 1
+  - delay: 50ms
+  - wait-serial: '[NOTE_ON]'
+  - wait-serial: 'note=61'
+  - set-control:
+      part-id: k2
+      name: pressed
+      value: 0
+  - delay: 50ms
+  - wait-serial: '[NOTE_OFF]'
+  - wait-serial: 'note=61'
+
+  # K3 -> Nota 62
+  - set-control:
+      part-id: k3
+      name: pressed
+      value: 1
+  - delay: 50ms
+  - wait-serial: '[NOTE_ON]'
+  - wait-serial: 'note=62'
+  - set-control:
+      part-id: k3
+      name: pressed
+      value: 0
+  - delay: 50ms
+  - wait-serial: '[NOTE_OFF]'
+  - wait-serial: 'note=62'
+
+  # K4 -> Nota 63
+  - set-control:
+      part-id: k4
+      name: pressed
+      value: 1
+  - delay: 50ms
+  - wait-serial: '[NOTE_ON]'
+  - wait-serial: 'note=63'
+  - set-control:
+      part-id: k4
+      name: pressed
+      value: 0
+  - delay: 50ms
+  - wait-serial: '[NOTE_OFF]'
+  - wait-serial: 'note=63'
+
+  # ==========================================
+  # Teste C - Acordes (2, 3 e 4 teclas)
+  # ==========================================
+  # K1 + K2 (60, 61)
+  - set-control: { part-id: k1, name: pressed, value: 1 }
+  - set-control: { part-id: k2, name: pressed, value: 1 }
+  - delay: 50ms
+  - wait-serial: 'note=60'
+  - wait-serial: 'note=61'
+  - set-control: { part-id: k1, name: pressed, value: 0 }
+  - set-control: { part-id: k2, name: pressed, value: 0 }
+  - delay: 50ms
+  - wait-serial: 'note=60'
+  - wait-serial: 'note=61'
+
+  # K1 + K3 (60, 62)
+  - set-control: { part-id: k1, name: pressed, value: 1 }
+  - set-control: { part-id: k3, name: pressed, value: 1 }
+  - delay: 50ms
+  - wait-serial: 'note=60'
+  - wait-serial: 'note=62'
+  - set-control: { part-id: k1, name: pressed, value: 0 }
+  - set-control: { part-id: k3, name: pressed, value: 0 }
+  - delay: 50ms
+  - wait-serial: 'note=60'
+  - wait-serial: 'note=62'
+
+  # K2 + K4 (61, 63)
+  - set-control: { part-id: k2, name: pressed, value: 1 }
+  - set-control: { part-id: k4, name: pressed, value: 1 }
+  - delay: 50ms
+  - wait-serial: 'note=61'
+  - wait-serial: 'note=63'
+  - set-control: { part-id: k2, name: pressed, value: 0 }
+  - set-control: { part-id: k4, name: pressed, value: 0 }
+  - delay: 50ms
+  - wait-serial: 'note=61'
+  - wait-serial: 'note=63'
+
+  # ==========================================
+  # Teste D - Anti-Ghosting (3 vertices da matriz)
+  # K1 + K2 + K3 (nao deve gerar note=63)
+  # ==========================================
+  - set-control: { part-id: k1, name: pressed, value: 1 }
+  - set-control: { part-id: k2, name: pressed, value: 1 }
+  - set-control: { part-id: k3, name: pressed, value: 1 }
+  - delay: 60ms
+  - wait-serial: 'note=60'
+  - wait-serial: 'note=61'
+  - wait-serial: 'note=62'
+
+  # Completa 4 teclas simultaneas (K1 + K2 + K3 + K4)
+  - set-control: { part-id: k4, name: pressed, value: 1 }
+  - delay: 50ms
+  - wait-serial: 'note=63'
+
+  # Solta todas
+  - set-control: { part-id: k1, name: pressed, value: 0 }
+  - set-control: { part-id: k2, name: pressed, value: 0 }
+  - set-control: { part-id: k3, name: pressed, value: 0 }
+  - set-control: { part-id: k4, name: pressed, value: 0 }
+  - delay: 60ms
+  - wait-serial: 'note=63'
+
+  # ==========================================
+  # Teste E - Estabilidade (pressionamento prolongado + heartbeat)
+  # ==========================================
+  - set-control: { part-id: k1, name: pressed, value: 1 }
+  - delay: 250ms
+  - wait-serial: 'note=60'
+  - set-control: { part-id: k1, name: pressed, value: 0 }
+  - delay: 50ms
+  - wait-serial: 'note=60'
