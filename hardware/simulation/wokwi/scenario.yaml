@@ -34,43 +34,37 @@ steps:
   - wait-serial: 'ch=0 note=63 vel=0'
 
   # ==========================================
-  # Teste C - Acordes de 2 teclas (2ms de escalonamento para ordem deterministica)
+  # Teste C - Acordes de 2 teclas (ordem livre validada por fase no verify_wokwi_log.py)
   # ==========================================
   # K1 + K2
   - set-control: { part-id: k1, name: pressed, value: 1 }
   - delay: 2ms
   - set-control: { part-id: k2, name: pressed, value: 1 }
-  - wait-serial: 'ch=0 note=60 vel=40000'
-  - wait-serial: 'ch=0 note=61 vel=40000'
+  - delay: 45ms
   - set-control: { part-id: k1, name: pressed, value: 0 }
   - delay: 2ms
   - set-control: { part-id: k2, name: pressed, value: 0 }
-  - wait-serial: 'ch=0 note=60 vel=0'
-  - wait-serial: 'ch=0 note=61 vel=0'
+  - delay: 45ms
 
   # K1 + K3
   - set-control: { part-id: k1, name: pressed, value: 1 }
   - delay: 2ms
   - set-control: { part-id: k3, name: pressed, value: 1 }
-  - wait-serial: 'ch=0 note=60 vel=40000'
-  - wait-serial: 'ch=0 note=62 vel=40000'
+  - delay: 45ms
   - set-control: { part-id: k1, name: pressed, value: 0 }
   - delay: 2ms
   - set-control: { part-id: k3, name: pressed, value: 0 }
-  - wait-serial: 'ch=0 note=60 vel=0'
-  - wait-serial: 'ch=0 note=62 vel=0'
+  - delay: 45ms
 
   # K2 + K4
   - set-control: { part-id: k2, name: pressed, value: 1 }
   - delay: 2ms
   - set-control: { part-id: k4, name: pressed, value: 1 }
-  - wait-serial: 'ch=0 note=61 vel=40000'
-  - wait-serial: 'ch=0 note=63 vel=40000'
+  - delay: 45ms
   - set-control: { part-id: k2, name: pressed, value: 0 }
   - delay: 2ms
   - set-control: { part-id: k4, name: pressed, value: 0 }
-  - wait-serial: 'ch=0 note=61 vel=0'
-  - wait-serial: 'ch=0 note=63 vel=0'
+  - delay: 45ms
 
   # ==========================================
   # Teste D - 3 vertices (K1+K2+K3 isolado)
@@ -80,17 +74,13 @@ steps:
   - set-control: { part-id: k2, name: pressed, value: 1 }
   - delay: 2ms
   - set-control: { part-id: k3, name: pressed, value: 1 }
-  - wait-serial: 'ch=0 note=60 vel=40000'
-  - wait-serial: 'ch=0 note=61 vel=40000'
-  - wait-serial: 'ch=0 note=62 vel=40000'
+  - delay: 45ms
   - set-control: { part-id: k1, name: pressed, value: 0 }
   - delay: 2ms
   - set-control: { part-id: k2, name: pressed, value: 0 }
   - delay: 2ms
   - set-control: { part-id: k3, name: pressed, value: 0 }
-  - wait-serial: 'ch=0 note=60 vel=0'
-  - wait-serial: 'ch=0 note=61 vel=0'
-  - wait-serial: 'ch=0 note=62 vel=0'
+  - delay: 45ms
 
   # ==========================================
   # Teste D2 - 4 teclas simultaneas (K1+K2+K3+K4)
@@ -102,10 +92,7 @@ steps:
   - set-control: { part-id: k3, name: pressed, value: 1 }
   - delay: 2ms
   - set-control: { part-id: k4, name: pressed, value: 1 }
-  - wait-serial: 'ch=0 note=60 vel=40000'
-  - wait-serial: 'ch=0 note=61 vel=40000'
-  - wait-serial: 'ch=0 note=62 vel=40000'
-  - wait-serial: 'ch=0 note=63 vel=40000'
+  - delay: 45ms
   - set-control: { part-id: k1, name: pressed, value: 0 }
   - delay: 2ms
   - set-control: { part-id: k2, name: pressed, value: 0 }
@@ -113,10 +100,7 @@ steps:
   - set-control: { part-id: k3, name: pressed, value: 0 }
   - delay: 2ms
   - set-control: { part-id: k4, name: pressed, value: 0 }
-  - wait-serial: 'ch=0 note=60 vel=0'
-  - wait-serial: 'ch=0 note=61 vel=0'
-  - wait-serial: 'ch=0 note=62 vel=0'
-  - wait-serial: 'ch=0 note=63 vel=0'
+  - delay: 45ms
 
   # ==========================================
   # Teste E - Estabilidade (pressionamento prolongado)

@@ -39,3 +39,6 @@
 
 ## 5. Recomendações para a Etapa 05 — Eventos Musicais e Codificação UMP
 - Unificar `NoteEvent` e `ControlEvent` em um codificador portátil de pacotes **UMP (Universal MIDI Packet)** em `harmonia_core` (C++17), com *golden vectors* no Catch2 para Note On/Off, Control Change (32 bits) e fallback MIDI 1.0 (7 bits).
+
+## 6. Atualização Pós-Etapa 04.1
+- A regressão digital (`scenario.yaml` + `verify_wokwi_log.py`) foi corrigida e aprovada (`20/20` fases, `exit 0`), e o filtro EMA foi otimizado para `shift=2` ($\alpha = 1/4$) a `100 Hz/canal` (`310 ms` até `4095` no Wokwi). Consulte [ETAPA_04_1_REPORT.md](ETAPA_04_1_REPORT.md) para as métricas completas.

@@ -190,3 +190,140 @@ TEST_CASE("AnalogBank keeps channels completely independent", "[core][analog]") 
     }
     REQUIRE_FALSE(bank.update_channel(1, 3005).has_value());
 }
+
+#include <cstdio>
+
+namespace {
+
+struct FilterBenchmarkResult {
+    int first_event_up_ms{-1};
+    int t50_up_ms{-1};
+    int t90_up_ms{-1};
+    int t99_up_ms{-1};
+    int t100_up_ms{-1};
+    int events_up{0};
+    int first_event_down_ms{-1};
+    int t50_down_ms{-1};
+    int t90_down_ms{-1};
+    int t99_down_ms{-1};
+    int t100_down_ms{-1};
+    int events_down{0};
+    int ramp_events{0};
+    int noise_events{0};
+    int hyst_near_events{0};
+};
+
+FilterBenchmarkResult run_filter_benchmark(std::uint8_t shift, int rate_hz, std::uint16_t hyst) {
+    FilterBenchmarkResult res{};
+    const int dt_ms = 1000 / rate_hz;
+
+    AnalogChannelConfig cfg{};
+    cfg.midi_channel = 0;
+    cfg.cc_number = 7;
+    cfg.calibration = AnalogCalibration{0, 4095, 4095, false};
+    cfg.filter_shift = shift;
+    cfg.hysteresis_raw = hyst;
+
+    // 1. Degrau 0% -> 100%
+    AnalogChannelProcessor proc(cfg);
+    (void)proc.update(0); // estado inicial em repouso
+    for (int step = 1; step <= 200; ++step) {
+        const int t_ms = step * dt_ms;
+        const auto ev = proc.update(4095);
+        const std::uint16_t f = proc.current_filtered_raw();
+        if (ev.has_value()) {
+            ++res.events_up;
+            if (res.first_event_up_ms < 0) res.first_event_up_ms = t_ms;
+        }
+        if (res.t50_up_ms < 0 && f >= 2048) res.t50_up_ms = t_ms;
+        if (res.t90_up_ms < 0 && f >= 3686) res.t90_up_ms = t_ms;
+        if (res.t99_up_ms < 0 && f >= 4054) res.t99_up_ms = t_ms;
+        if (res.t100_up_ms < 0 && f == 4095) res.t100_up_ms = t_ms;
+    }
+
+    // 2. Degrau 100% -> 0%
+    proc.reset();
+    (void)proc.update(4095);
+    for (int step = 1; step <= 200; ++step) {
+        const int t_ms = step * dt_ms;
+        const auto ev = proc.update(0);
+        const std::uint16_t f = proc.current_filtered_raw();
+        if (ev.has_value()) {
+            ++res.events_down;
+            if (res.first_event_down_ms < 0) res.first_event_down_ms = t_ms;
+        }
+        if (res.t50_down_ms < 0 && f <= 2047) res.t50_down_ms = t_ms;
+        if (res.t90_down_ms < 0 && f <= 409) res.t90_down_ms = t_ms;
+        if (res.t99_down_ms < 0 && f <= 41) res.t99_down_ms = t_ms;
+        if (res.t100_down_ms < 0 && f == 0) res.t100_down_ms = t_ms;
+    }
+
+    // 3. Movimentacao gradual (rampa 0 -> 4095 em 2.0 s)
+    proc.reset();
+    (void)proc.update(0);
+    const int ramp_steps = 2 * rate_hz;
+    for (int i = 1; i <= ramp_steps; ++i) {
+        const std::uint16_t sample = static_cast<std::uint16_t>((4095 * i) / ramp_steps);
+        if (proc.update(sample).has_value()) ++res.ramp_events;
+    }
+
+    // 4. Ruido de pequena amplitude (+-8 counts ao redor de 2000 por 2.0 s)
+    proc.reset();
+    (void)proc.update(2000);
+    for (int i = 0; i < 2 * rate_hz; ++i) {
+        const std::uint16_t s = static_cast<std::uint16_t>(2000 + ((i % 2 == 0) ? 8 : -8));
+        if (proc.update(s).has_value()) ++res.noise_events;
+    }
+
+    // 5. Oscilacao proxima ao limiar de histerese (+-(hyst - 1) ao redor de 2000)
+    proc.reset();
+    (void)proc.update(2000);
+    for (int i = 0; i < 2 * rate_hz; ++i) {
+        const int delta = (i % 2 == 0) ? static_cast<int>(hyst - 1) : -static_cast<int>(hyst - 1);
+        const std::uint16_t s = static_cast<std::uint16_t>(2000 + delta);
+        if (proc.update(s).has_value()) ++res.hyst_near_events;
+    }
+
+    return res;
+}
+
+} // namespace
+
+TEST_CASE("Filter configurations comparison for step, ramp, noise and hysteresis", "[core][analog][benchmark]") {
+    const auto r_s3_50  = run_filter_benchmark(3, 50, 24);
+    const auto r_s2_50  = run_filter_benchmark(2, 50, 24);
+    const auto r_s2_100 = run_filter_benchmark(2, 100, 24);
+    const auto r_s1_50  = run_filter_benchmark(1, 50, 24);
+
+    std::printf("\n[FILTER_BENCH] shift=3@50Hz : up(1st=%dms, 50%%=%dms, 90%%=%dms, 99%%=%dms, 100%%=%dms, ev=%d) | down(1st=%dms, 50%%=%dms, 90%%=%dms, 99%%=%dms, 100%%=%dms, ev=%d) | ramp_ev=%d noise_ev=%d hyst_near_ev=%d\n",
+                r_s3_50.first_event_up_ms, r_s3_50.t50_up_ms, r_s3_50.t90_up_ms, r_s3_50.t99_up_ms, r_s3_50.t100_up_ms, r_s3_50.events_up,
+                r_s3_50.first_event_down_ms, r_s3_50.t50_down_ms, r_s3_50.t90_down_ms, r_s3_50.t99_down_ms, r_s3_50.t100_down_ms, r_s3_50.events_down,
+                r_s3_50.ramp_events, r_s3_50.noise_events, r_s3_50.hyst_near_events);
+    std::printf("[FILTER_BENCH] shift=2@50Hz : up(1st=%dms, 50%%=%dms, 90%%=%dms, 99%%=%dms, 100%%=%dms, ev=%d) | down(1st=%dms, 50%%=%dms, 90%%=%dms, 99%%=%dms, 100%%=%dms, ev=%d) | ramp_ev=%d noise_ev=%d hyst_near_ev=%d\n",
+                r_s2_50.first_event_up_ms, r_s2_50.t50_up_ms, r_s2_50.t90_up_ms, r_s2_50.t99_up_ms, r_s2_50.t100_up_ms, r_s2_50.events_up,
+                r_s2_50.first_event_down_ms, r_s2_50.t50_down_ms, r_s2_50.t90_down_ms, r_s2_50.t99_down_ms, r_s2_50.t100_down_ms, r_s2_50.events_down,
+                r_s2_50.ramp_events, r_s2_50.noise_events, r_s2_50.hyst_near_events);
+    std::printf("[FILTER_BENCH] shift=2@100Hz: up(1st=%dms, 50%%=%dms, 90%%=%dms, 99%%=%dms, 100%%=%dms, ev=%d) | down(1st=%dms, 50%%=%dms, 90%%=%dms, 99%%=%dms, 100%%=%dms, ev=%d) | ramp_ev=%d noise_ev=%d hyst_near_ev=%d\n",
+                r_s2_100.first_event_up_ms, r_s2_100.t50_up_ms, r_s2_100.t90_up_ms, r_s2_100.t99_up_ms, r_s2_100.t100_up_ms, r_s2_100.events_up,
+                r_s2_100.first_event_down_ms, r_s2_100.t50_down_ms, r_s2_100.t90_down_ms, r_s2_100.t99_down_ms, r_s2_100.t100_down_ms, r_s2_100.events_down,
+                r_s2_100.ramp_events, r_s2_100.noise_events, r_s2_100.hyst_near_events);
+    std::printf("[FILTER_BENCH] shift=1@50Hz : up(1st=%dms, 50%%=%dms, 90%%=%dms, 99%%=%dms, 100%%=%dms, ev=%d) | down(1st=%dms, 50%%=%dms, 90%%=%dms, 99%%=%dms, 100%%=%dms, ev=%d) | ramp_ev=%d noise_ev=%d hyst_near_ev=%d\n",
+                r_s1_50.first_event_up_ms, r_s1_50.t50_up_ms, r_s1_50.t90_up_ms, r_s1_50.t99_up_ms, r_s1_50.t100_up_ms, r_s1_50.events_up,
+                r_s1_50.first_event_down_ms, r_s1_50.t50_down_ms, r_s1_50.t90_down_ms, r_s1_50.t99_down_ms, r_s1_50.t100_down_ms, r_s1_50.events_down,
+                r_s1_50.ramp_events, r_s1_50.noise_events, r_s1_50.hyst_near_events);
+
+    // Todas as configuracoes devem suprimir ruido pequeno e oscilacao abaixo da histerese
+    REQUIRE(r_s3_50.noise_events == 0);
+    REQUIRE(r_s2_50.noise_events == 0);
+    REQUIRE(r_s2_100.noise_events == 0);
+    REQUIRE(r_s1_50.noise_events == 0);
+    REQUIRE(r_s2_100.hyst_near_events == 0);
+
+    // shift=2 @ 100Hz deve atingir 99% em < 200ms e 100% muito mais rapido que shift=3 @ 50Hz
+    REQUIRE(r_s2_100.t99_up_ms > 0);
+    REQUIRE(r_s2_100.t99_up_ms < 200);
+    REQUIRE(r_s2_100.t100_up_ms > 0);
+    REQUIRE(r_s2_100.t100_up_ms < r_s3_50.t100_up_ms);
+    REQUIRE(r_s2_100.t100_down_ms > 0);
+    REQUIRE(r_s2_100.t100_down_ms < r_s3_50.t100_down_ms);
+}

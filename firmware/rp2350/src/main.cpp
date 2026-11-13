@@ -19,12 +19,13 @@ constexpr std::array<std::uint8_t, 2> kColPins{14, 15};
 
 constexpr std::uint32_t kScanIntervalUs = 1000;          // 1 kHz matriz digital
 constexpr std::uint32_t kDebounceUs = 20000;             // 20 ms (diagnóstico inicial)
-constexpr std::uint32_t kAdcPollIntervalUs = 10000;      // 10 ms por leitura alternada (50 Hz/canal)
+constexpr std::uint32_t kAdcPollIntervalUs = 5000;       // 5 ms por leitura alternada (100 Hz/canal)
 constexpr std::uint32_t kHeartbeatIntervalUs = 2000000;  // 2 s
 
 constexpr std::uint8_t kMidiChannel = 0;
 constexpr std::uint8_t kBaseNote = 60;
 constexpr std::uint16_t kFixedVelocity = 40000;
+constexpr std::uint8_t kAdcFilterShift = 2;              // alpha = 1/4 = 0.25
 constexpr std::uint16_t kAdcHysteresisRaw = 24;
 
 } // namespace
@@ -49,7 +50,8 @@ int main() {
 
     harmonia::rp2350::AdcDriver adc_driver(10);
     adc_driver.init_gpio_channels(true, true, false);
-    printf("[ADC]  GP26 (ADC0->CC7 Vol) | GP27 (ADC1->CC11 Expr) | 50 Hz/ch | Hyst=%u\n",
+    printf("[ADC]  GP26 (ADC0->CC7 Vol) | GP27 (ADC1->CC11 Expr) | 100 Hz/ch | shift=%u | Hyst=%u\n",
+           static_cast<unsigned>(kAdcFilterShift),
            static_cast<unsigned>(kAdcHysteresisRaw));
 
     harmonia::core::KeyMatrixState<2, 2> snapshot(2, 2);
@@ -64,10 +66,10 @@ int main() {
 
     harmonia::core::AnalogBank<2> analog_bank;
     const harmonia::core::AnalogChannelConfig ch0_cfg{
-        kMidiChannel, 7, harmonia::core::AnalogCalibration{0, 4095, 4095, false}, 3, kAdcHysteresisRaw
+        kMidiChannel, 7, harmonia::core::AnalogCalibration{0, 4095, 4095, false}, kAdcFilterShift, kAdcHysteresisRaw
     };
     const harmonia::core::AnalogChannelConfig ch1_cfg{
-        kMidiChannel, 11, harmonia::core::AnalogCalibration{0, 4095, 4095, false}, 3, kAdcHysteresisRaw
+        kMidiChannel, 11, harmonia::core::AnalogCalibration{0, 4095, 4095, false}, kAdcFilterShift, kAdcHysteresisRaw
     };
     if (!analog_bank.configure_channel(0, ch0_cfg) || !analog_bank.configure_channel(1, ch1_cfg)) {
         printf("[ERROR] Falha ao configurar canais analógicos\n");
@@ -89,10 +91,31 @@ int main() {
     std::uint8_t active_adc_ch = 0;
     bool led_state = false;
 
+    std::uint32_t prev_scan_start_us = 0;
+    bool has_prev_scan = false;
+    std::uint32_t max_scan_dt_us = 0;
+    std::uint32_t max_scan_late_us = 0;
+    std::uint32_t max_adc_proc_us = 0;
+    std::uint32_t max_adc_late_us = 0;
+    std::uint32_t adc_events_emitted = 0;
+
     while (true) {
         const std::uint32_t now_us = time_us_32();
 
         if (static_cast<std::int32_t>(now_us - next_scan_us) >= 0) {
+            const std::uint32_t scan_late_us = now_us - next_scan_us;
+            if (scan_late_us > max_scan_late_us) {
+                max_scan_late_us = scan_late_us;
+            }
+            if (has_prev_scan) {
+                const std::uint32_t scan_dt_us = now_us - prev_scan_start_us;
+                if (scan_dt_us > max_scan_dt_us) {
+                    max_scan_dt_us = scan_dt_us;
+                }
+            } else {
+                has_prev_scan = true;
+            }
+            prev_scan_start_us = now_us;
             next_scan_us += kScanIntervalUs;
 
             matrix_driver.read_snapshot(snapshot);
@@ -124,11 +147,22 @@ int main() {
         }
 
         if (static_cast<std::int32_t>(now_us - next_adc_us) >= 0) {
+            const std::uint32_t adc_late_us = now_us - next_adc_us;
+            if (adc_late_us > max_adc_late_us) {
+                max_adc_late_us = adc_late_us;
+            }
             next_adc_us += kAdcPollIntervalUs;
 
+            const std::uint32_t adc_start_us = time_us_32();
             const std::uint16_t raw = adc_driver.read_channel(active_adc_ch);
             const auto ctrl = analog_bank.update_channel(active_adc_ch, raw);
+            const std::uint32_t adc_proc_us = time_us_32() - adc_start_us;
+            if (adc_proc_us > max_adc_proc_us) {
+                max_adc_proc_us = adc_proc_us;
+            }
+
             if (ctrl.has_value()) {
+                ++adc_events_emitted;
                 printf("[ADC_CC]   [%lu us] ch=%u cc=%u raw=%u midi7=%u val32=%lu\n",
                        static_cast<unsigned long>(now_us),
                        static_cast<unsigned>(ctrl->channel),
@@ -151,6 +185,13 @@ int main() {
             printf("[HEARTBEAT] [%lu us] #%lu\n",
                    static_cast<unsigned long>(now_us),
                    static_cast<unsigned long>(heartbeat_count));
+            printf("[METRICS] [%lu us] max_scan_dt=%lu max_scan_late=%lu max_adc_proc=%lu max_adc_late=%lu adc_events=%lu\n",
+                   static_cast<unsigned long>(now_us),
+                   static_cast<unsigned long>(max_scan_dt_us),
+                   static_cast<unsigned long>(max_scan_late_us),
+                   static_cast<unsigned long>(max_adc_proc_us),
+                   static_cast<unsigned long>(max_adc_late_us),
+                   static_cast<unsigned long>(adc_events_emitted));
         }
     }
 

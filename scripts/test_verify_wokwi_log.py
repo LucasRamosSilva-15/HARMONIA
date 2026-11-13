@@ -88,6 +88,16 @@ class VerifyWokwiLogTests(unittest.TestCase):
         self.assertFalse(res.passed)
         self.assertTrue(len(res.unexpected_events) >= 1)
 
+    def test_reordered_chord_note_off_passes(self) -> None:
+        lines = build_valid_log()
+        # Troca a ordem de note=61 e note=62 no D2_4KEYS_OFF (exatamente como ocorreu no Wokwi)
+        idx_61 = max(i for i, ln in enumerate(lines) if "note=61 vel=0" in ln)
+        idx_62 = max(i for i, ln in enumerate(lines) if "note=62 vel=0" in ln)
+        lines[idx_61], lines[idx_62] = lines[idx_62], lines[idx_61]
+        res = vwl.analyze_lines(lines)
+        self.assertTrue(res.passed, msg=f"Errors: {res.errors}")
+        self.assertEqual(res.phases_completed, len(vwl.EXPECTED_PHASES))
+
 
 if __name__ == "__main__":
     unittest.main()
