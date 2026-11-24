@@ -56,5 +56,5 @@ ctest --test-dir build-san --output-on-failure
 
 ## Status Atual
 
-- **Etapa atual:** Etapa 04 — Aquisição Analógica e Filtragem no RP2350 (Concluída: 30/30 testes C++ no host, firmware `pico2` compilado com `hardware_adc` e cenário `scenario_adc.yaml` aprovado no Wokwi).
-- **Próxima etapa:** Etapa 05 — Eventos Musicais e Codificação UMP (aguardando autorização).
+- **Etapa atual:** Etapa 06 — Transporte USB MIDI (TinyUSB) e Fallback MIDI 1.0 no RP2350 (Concluída: 42/42 testes C++ no host e com ASan/UBSan, firmware `pico2` compilado com `tinyusb_device` e regressões `scenario_ump.yaml`, `scenario_adc.yaml` e `scenario.yaml` aprovadas no Wokwi).
+- **Próxima etapa:** Etapa 07 — Enlace Interno RP2350 ↔ Raspberry Pi 5 com Framing e CRC (aguardando autorização).

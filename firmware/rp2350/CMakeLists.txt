@@ -29,6 +29,7 @@ add_executable(harmonia_diag
     src/main.cpp
     src/gpio_matrix_driver.cpp
     src/adc_driver.cpp
+    src/usb_descriptors.cpp
 )
 
 target_include_directories(harmonia_diag
@@ -38,7 +39,10 @@ target_include_directories(harmonia_diag
 
 target_link_libraries(harmonia_diag
     pico_stdlib
+    pico_unique_id
     hardware_adc
+    tinyusb_device
+    tinyusb_board
     harmonia::core
 )
 

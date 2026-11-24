@@ -9,9 +9,11 @@
 #include "harmonia/core/key_scanner.hpp"
 #include "harmonia/core/midi_event.hpp"
 #include "harmonia/core/ump.hpp"
+#include "harmonia/core/usb_midi_bridge.hpp"
 #include "hardware/gpio.h"
 #include "pico/stdlib.h"
 #include "pico/time.h"
+#include "tusb.h"
 
 namespace {
 
@@ -29,10 +31,29 @@ constexpr std::uint16_t kFixedVelocity = 40000;
 constexpr std::uint8_t kAdcFilterShift = 2;              // alpha = 1/4 = 0.25
 constexpr std::uint16_t kAdcHysteresisRaw = 24;
 
+volatile bool g_usb_mounted = false;
+
 } // namespace
+
+extern "C" {
+
+void tud_mount_cb(void) {
+    g_usb_mounted = true;
+}
+
+void tud_umount_cb(void) {
+    g_usb_mounted = false;
+}
+
+void tud_midi_rx_cb(uint8_t itf) {
+    (void)itf;
+}
+
+} // extern "C"
 
 int main() {
     stdio_init_all();
+    tud_init(BOARD_TUD_RHPORT);
 
 #ifdef PICO_DEFAULT_LED_PIN
     gpio_init(PICO_DEFAULT_LED_PIN);
@@ -87,6 +108,7 @@ int main() {
     std::array<harmonia::core::NoteEvent, 8> events{};
     harmonia::core::UmpRouter ump_router(0, harmonia::core::UmpProtocolMode::Midi2);
     harmonia::core::UmpPacketQueue<32> ump_queue;
+    harmonia::core::UsbMidiBridge usb_bridge(0);
     std::uint32_t next_scan_us = time_us_32();
     std::uint32_t next_adc_us = next_scan_us + 500; // defasado 500 us da borda do scan digital
     std::uint32_t last_heartbeat_us = next_scan_us;
@@ -103,6 +125,13 @@ int main() {
     std::uint32_t adc_events_emitted = 0;
 
     while (true) {
+        tud_task();
+        const bool usb_ready = g_usb_mounted && tud_midi_mounted();
+        usb_bridge.set_alt_setting(
+            usb_ready ? harmonia::core::UsbAltSetting::Midi1Fallback
+                      : harmonia::core::UsbAltSetting::Disconnected
+        );
+
         const std::uint32_t now_us = time_us_32();
 
         if (static_cast<std::int32_t>(now_us - next_scan_us) >= 0) {
@@ -180,7 +209,7 @@ int main() {
             active_adc_ch = static_cast<std::uint8_t>((active_adc_ch + 1u) % 2u);
         }
 
-        // Drena ate 4 pacotes UMP por iteracao para diagnostico UART0 fora da janela critica de aquisicao
+        // Drena ate 4 pacotes UMP por iteracao para diagnostico UART0 e envio USB MIDI nao bloqueante
         for (int drained = 0; drained < 4 && !ump_queue.empty(); ++drained) {
             const auto pkt = ump_queue.pop();
             if (!pkt.has_value()) {
@@ -198,6 +227,21 @@ int main() {
                        static_cast<unsigned>(pkt->group()),
                        static_cast<unsigned long>(pkt->words[0]));
             }
+
+            const auto usb_frame = usb_bridge.prepare_tx(*pkt);
+            if (usb_frame.has_value() && usb_ready) {
+                const bool sent = tud_midi_packet_write(usb_frame->midi1_usb_packet.data());
+                usb_bridge.record_tx_result(sent);
+            }
+        }
+
+        // Leitura nao bloqueante de pacotes vindos do host USB
+        while (usb_ready && tud_midi_available() > 0) {
+            std::uint8_t rx_pkt[4]{};
+            if (!tud_midi_packet_read(rx_pkt)) {
+                break;
+            }
+            (void)usb_bridge.receive_midi1_usb_packet(rx_pkt);
         }
 
         if (static_cast<std::uint32_t>(now_us - last_heartbeat_us) >= kHeartbeatIntervalUs) {
@@ -210,14 +254,18 @@ int main() {
             printf("[HEARTBEAT] [%lu us] #%lu\n",
                    static_cast<unsigned long>(now_us),
                    static_cast<unsigned long>(heartbeat_count));
-            printf("[METRICS] [%lu us] max_scan_dt=%lu max_scan_late=%lu max_adc_proc=%lu max_adc_late=%lu adc_events=%lu ump_drops=%lu\n",
+            printf("[METRICS] [%lu us] max_scan_dt=%lu max_scan_late=%lu max_adc_proc=%lu max_adc_late=%lu adc_events=%lu ump_drops=%lu usb_mounted=%u usb_alt=%d usb_tx_ok=%lu usb_drops=%lu\n",
                    static_cast<unsigned long>(now_us),
                    static_cast<unsigned long>(max_scan_dt_us),
                    static_cast<unsigned long>(max_scan_late_us),
                    static_cast<unsigned long>(max_adc_proc_us),
                    static_cast<unsigned long>(max_adc_late_us),
                    static_cast<unsigned long>(adc_events_emitted),
-                   static_cast<unsigned long>(ump_queue.dropped_count()));
+                   static_cast<unsigned long>(ump_queue.dropped_count()),
+                   static_cast<unsigned>(usb_bridge.is_mounted() ? 1u : 0u),
+                   static_cast<int>(usb_bridge.alt_setting()),
+                   static_cast<unsigned long>(usb_bridge.tx_ok_count()),
+                   static_cast<unsigned long>(usb_bridge.drop_count()));
         }
     }
 
