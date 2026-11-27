@@ -4,9 +4,11 @@
 
 #include "adc_driver.hpp"
 #include "gpio_matrix_driver.hpp"
+#include "uart_link_driver.hpp"
 #include "harmonia/core/analog_control.hpp"
 #include "harmonia/core/key_matrix.hpp"
 #include "harmonia/core/key_scanner.hpp"
+#include "harmonia/core/link_protocol.hpp"
 #include "harmonia/core/midi_event.hpp"
 #include "harmonia/core/ump.hpp"
 #include "harmonia/core/usb_midi_bridge.hpp"
@@ -76,6 +78,11 @@ int main() {
            static_cast<unsigned>(kAdcFilterShift),
            static_cast<unsigned>(kAdcHysteresisRaw));
 
+    harmonia::rp2350::UartLinkDriver uart_link;
+    uart_link.init();
+    printf("[LINK] UART1 GP4(TX)/GP5(RX) @ %lu bps | COBS + CRC-16\n",
+           static_cast<unsigned long>(uart_link.actual_baud()));
+
     harmonia::core::KeyMatrixState<2, 2> snapshot(2, 2);
     harmonia::core::KeyScanner<2, 2> scanner;
     scanner.debouncer().set_debounce_us(kDebounceUs);
@@ -109,6 +116,8 @@ int main() {
     harmonia::core::UmpRouter ump_router(0, harmonia::core::UmpProtocolMode::Midi2);
     harmonia::core::UmpPacketQueue<32> ump_queue;
     harmonia::core::UsbMidiBridge usb_bridge(0);
+    harmonia::core::LinkFrameDecoder link_rx_decoder;
+    std::uint8_t link_seq = 0;
     std::uint32_t next_scan_us = time_us_32();
     std::uint32_t next_adc_us = next_scan_us + 500; // defasado 500 us da borda do scan digital
     std::uint32_t last_heartbeat_us = next_scan_us;
@@ -126,6 +135,8 @@ int main() {
 
     while (true) {
         tud_task();
+        uart_link.poll_tx();
+        uart_link.poll_rx(link_rx_decoder);
         const bool usb_ready = g_usb_mounted && tud_midi_mounted();
         usb_bridge.set_alt_setting(
             usb_ready ? harmonia::core::UsbAltSetting::Midi1Fallback
@@ -233,6 +244,14 @@ int main() {
                 const bool sent = tud_midi_packet_write(usb_frame->midi1_usb_packet.data());
                 usb_bridge.record_tx_result(sent);
             }
+
+            std::array<std::uint8_t, harmonia::core::kLinkMaxEncodedFrameBytes> link_frame{};
+            const std::size_t frame_len = harmonia::core::encode_ump_frame(
+                *pkt, link_seq++, link_frame.data(), link_frame.size()
+            );
+            if (frame_len > 0u) {
+                (void)uart_link.try_send_frame(link_frame.data(), frame_len);
+            }
         }
 
         // Leitura nao bloqueante de pacotes vindos do host USB
@@ -251,10 +270,17 @@ int main() {
 #ifdef PICO_DEFAULT_LED_PIN
             gpio_put(PICO_DEFAULT_LED_PIN, led_state);
 #endif
+            std::array<std::uint8_t, harmonia::core::kLinkMaxEncodedFrameBytes> hb_frame{};
+            const std::size_t hb_len = harmonia::core::encode_heartbeat_frame(
+                link_seq++, heartbeat_count, hb_frame.data(), hb_frame.size()
+            );
+            if (hb_len > 0u) {
+                (void)uart_link.try_send_frame(hb_frame.data(), hb_len);
+            }
             printf("[HEARTBEAT] [%lu us] #%lu\n",
                    static_cast<unsigned long>(now_us),
                    static_cast<unsigned long>(heartbeat_count));
-            printf("[METRICS] [%lu us] max_scan_dt=%lu max_scan_late=%lu max_adc_proc=%lu max_adc_late=%lu adc_events=%lu ump_drops=%lu usb_mounted=%u usb_alt=%d usb_tx_ok=%lu usb_drops=%lu\n",
+            printf("[METRICS] [%lu us] max_scan_dt=%lu max_scan_late=%lu max_adc_proc=%lu max_adc_late=%lu adc_events=%lu ump_drops=%lu usb_mounted=%u usb_alt=%d usb_tx_ok=%lu usb_drops=%lu link_tx_ok=%lu link_drops=%lu link_crc_err=%lu\n",
                    static_cast<unsigned long>(now_us),
                    static_cast<unsigned long>(max_scan_dt_us),
                    static_cast<unsigned long>(max_scan_late_us),
@@ -265,7 +291,10 @@ int main() {
                    static_cast<unsigned>(usb_bridge.is_mounted() ? 1u : 0u),
                    static_cast<int>(usb_bridge.alt_setting()),
                    static_cast<unsigned long>(usb_bridge.tx_ok_count()),
-                   static_cast<unsigned long>(usb_bridge.drop_count()));
+                   static_cast<unsigned long>(usb_bridge.drop_count()),
+                   static_cast<unsigned long>(uart_link.tx_ok_count()),
+                   static_cast<unsigned long>(uart_link.tx_drop_count()),
+                   static_cast<unsigned long>(link_rx_decoder.stats().crc_errors));
         }
     }
 

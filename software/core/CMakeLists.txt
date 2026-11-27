@@ -3,6 +3,7 @@ add_library(harmonia_core STATIC
     src/analog_control.cpp
     src/ump.cpp
     src/usb_midi_bridge.cpp
+    src/link_protocol.cpp
 )
 
 add_library(harmonia::core ALIAS harmonia_core)

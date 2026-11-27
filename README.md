@@ -56,5 +56,5 @@ ctest --test-dir build-san --output-on-failure
 
 ## Status Atual
 
-- **Etapa atual:** Etapa 06 — Transporte USB MIDI (TinyUSB) e Fallback MIDI 1.0 no RP2350 (Concluída: 42/42 testes C++ no host e com ASan/UBSan, firmware `pico2` compilado com `tinyusb_device` e regressões `scenario_ump.yaml`, `scenario_adc.yaml` e `scenario.yaml` aprovadas no Wokwi).
-- **Próxima etapa:** Etapa 07 — Enlace Interno RP2350 ↔ Raspberry Pi 5 com Framing e CRC (aguardando autorização).
+- **Etapa atual:** Etapa 07 — Protocolo de Enlace Interno (UART1 `921.600` bps + COBS + CRC-16 + `SpscRingBuffer`, ADR-003) (Concluída: 48/48 testes C++ no host e com ASan/UBSan incluindo loopback POSIX PTY, firmware `pico2` compilado com `hardware_uart` e regressões Wokwi aprovadas).
+- **Próxima etapa:** Etapa 08 — Motor de Áudio FluidSynth e Thread-Safety Lock-Free (aguardando autorização).

@@ -16,6 +16,7 @@ add_executable(harmonia_core_tests
     test_analog_control.cpp
     test_ump.cpp
     test_usb_midi_bridge.cpp
+    test_link_protocol.cpp
 )
 
 target_link_libraries(harmonia_core_tests

@@ -13,9 +13,10 @@
 - **Consequências:** Evita manter forks externos divergentes, mantém licença MIT e garante suporte a Dual Alternate Settings (MIDI 2.0 UMP + fallback MIDI 1.0).
 
 ## ADR-003: Comunicação Interna Independente de USB MIDI
-- **Status:** Em investigação (Etapa 07)
+- **Status:** Aceito (Etapa 07)
 - **Contexto:** O enlace RP2350 <-> RPi 5 não deve depender da pilha USB externa.
-- **Decisão:** Avaliar SPI (alta velocidade, full-duplex, controle de clock pelo mestre) vs. UART (simplicidade, menos pinos) na Etapa 07, com framing explícito e CRC.
+- **Decisão:** Adotar **UART1 dedicada (`GP4` TX / `GP5` RX, `921.600` bps 8N1)** no RP2350 com framing **COBS** e **CRC-16/CCITT-FALSE** sobre palavras UMP Big-Endian, preservando `UART0` (`GP0`/`GP1`) para diagnóstico.
+- **Consequências:** Transmissão de ~`195 µs` por pacote UMP MIDI 2.0 (`< 0,2 ms`), apenas 3 fios (`TX`, `RX`, `GND`) em 3,3 V direto, sem risco de contenção de SPI Slave no RP2350 e com detecção determinística de perda (`seq_gaps`) e corrupção (`crc_errors`).
 
 ## ADR-004: Isolamento da Thread de Áudio (Lock-Free)
 - **Status:** Aceito

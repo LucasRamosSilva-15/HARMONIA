@@ -20,6 +20,9 @@ if(HARMONIA_BUILD_HOST)
     set(CMAKE_CXX_EXTENSIONS OFF)
 
     add_subdirectory(software/core)
+    if(UNIX)
+        add_subdirectory(software/tools)
+    endif()
 
     if(HARMONIA_BUILD_TESTS)
         enable_testing()
